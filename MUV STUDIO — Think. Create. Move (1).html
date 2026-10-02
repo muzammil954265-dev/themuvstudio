@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MUV STUDIO — Think. Create. Move.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#0a0a0a; --char:#161616; --white:#F4F1EC; --red:#FF3B3B; --grey:#8c8c8c;
+  --serif:'Playfair Display',Georgia,serif; --sans:'Archivo',Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth; scroll-padding-top:env(safe-area-inset-top,0px);}
+body{background:var(--black); color:var(--white); font-family:var(--sans); overflow-x:hidden; cursor:none;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+@media(hover:none),(pointer:coarse){body{cursor:auto;}}
+a{color:inherit; text-decoration:none;}
+::selection{background:var(--red); color:var(--black);}
+h1,h2,h3{font-family:var(--serif); font-weight:500;}
+
+#webgl{position:fixed; inset:0; z-index:0; opacity:0; transition:opacity 1.6s ease;}
+#webgl.ready{opacity:1;}
+.noise{position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.04; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+#cur{position:fixed; width:7px; height:7px; border-radius:50%; background:var(--red); pointer-events:none; z-index:9999; transform:translate(-50%,-50%);}
+#ring{position:fixed; width:32px; height:32px; border:1px solid rgba(244,241,236,.4); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:width .3s,height .3s,border-color .3s;}
+#ring.big{width:84px; height:84px; border-color:var(--red);}
+#ring .lbl{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.6rem; letter-spacing:.1em; opacity:0; transition:opacity .3s; color:var(--red);}
+#ring.big .lbl{opacity:1;}
+@media(hover:none),(pointer:coarse){#cur,#ring{display:none;}}
+
+nav{position:fixed; top:0; left:0; right:0; z-index:500; display:flex; justify-content:space-between; align-items:center; padding:26px 6vw;}
+.logo{font-family:var(--serif); font-size:1.25rem; letter-spacing:.04em;}
+.navlinks{display:flex; gap:2.2rem; font-size:.78rem; letter-spacing:.04em; text-transform:uppercase;}
+.navlinks a{opacity:.7; transition:opacity .3s, color .3s;}
+.navlinks a:hover,.navlinks a.active{opacity:1; color:var(--red);}
+.navtoggle{display:none; background:none; border:none; color:var(--white); font-size:1.4rem; line-height:1; cursor:pointer; padding:.3rem;}
+@media(max-width:800px){
+  .navlinks{position:fixed; inset:0; z-index:499; background:rgba(10,10,10,.97); flex-direction:column; align-items:center; justify-content:center; gap:2.2rem; font-size:1.1rem;
+    opacity:0; pointer-events:none; transform:translateY(-12px); transition:opacity .35s ease, transform .35s ease;}
+  .navlinks.open{opacity:1; pointer-events:auto; transform:translateY(0);}
+  .navtoggle{display:block; z-index:501;}
+}
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+  outline:1px solid var(--red); outline-offset:3px;
+}
+
+section{position:relative; z-index:2; padding:min(13vw,9rem) 6vw;}
+.reveal{opacity:0; transform:translateY(34px); transition:opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1);}
+.reveal.in{opacity:1; transform:translateY(0);}
+
+.hero{height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+@keyframes heroFade{from{opacity:0;} to{opacity:1;}}
+@keyframes heroLineUp{from{transform:translateY(110%); opacity:0;} to{transform:translateY(0); opacity:1;}}
+.eyebrow{font-family:var(--serif); font-size:clamp(1.3rem,3.2vw,2rem); letter-spacing:.38em; color:var(--white); margin-bottom:1.8rem; opacity:0; animation:heroFade 1.2s ease .2s forwards; position:relative; padding-bottom:1.1rem;}
+.eyebrow::after{content:''; position:absolute; bottom:0; left:50%; width:0; height:1px; background:var(--red); transform:translateX(-50%); animation:lineGrow 1s ease .9s forwards;}
+@keyframes lineGrow{to{width:60px;}}
+h1.headline{font-size:clamp(2.2rem,6.4vw,4.6rem); line-height:1.08; max-width:900px;}
+h1.headline .line{overflow:hidden; display:block;}
+h1.headline span{display:inline-block; transform:translateY(110%); opacity:0; animation:heroLineUp .9s cubic-bezier(.2,.8,.2,1) .9s forwards;}
+h1.headline .line:nth-child(2) span{animation-delay:1.05s;}
+.sub{font-weight:300; color:var(--grey); max-width:460px; margin:1.6rem auto 0; line-height:1.7; font-size:.98rem; opacity:0; animation:heroFade 1s ease 1.5s forwards;}
+.ctas{display:flex; gap:1rem; justify-content:center; margin-top:2.4rem; flex-wrap:wrap; opacity:0; animation:heroFade 1s ease 1.75s forwards;}
+.btn{padding:.9rem 1.9rem; font-size:.75rem; letter-spacing:.07em; text-transform:uppercase; border-radius:1px; transition:transform .4s cubic-bezier(.2,.8,.2,1), background .3s, color .3s, border-color .3s; cursor:pointer;}
+.btn.solid{background:var(--red); color:var(--black); border:1px solid var(--red);}
+.btn.solid:hover{background:transparent; color:var(--red);}
+.btn.outline{border:1px solid rgba(244,241,236,.3);}
+.btn.outline:hover{border-color:var(--white);}
+.scrollind{position:absolute; bottom:2.4rem; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:.5rem; opacity:0; animation:heroFade 1s ease 2.1s forwards; font-size:.65rem; letter-spacing:.2em; color:var(--grey);}
+.scrollind .bar{width:1px; height:34px; background:linear-gradient(var(--red),transparent); animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.25;} 50%{opacity:1;}}
+
+.panel{background:rgba(10,10,10,.55); backdrop-filter:blur(2px);}
+.goldline{width:0; height:1px; background:var(--red); margin-bottom:2.2rem; transition:width 1.3s cubic-bezier(.2,.7,.2,1);}
+.goldline.in{width:100px;}
+.about{max-width:1000px; margin:0 auto;}
+.about h2{font-size:clamp(2rem,5vw,3.3rem); max-width:760px;}
+.about p{margin-top:2rem; max-width:540px; color:var(--grey); font-weight:300; line-height:1.85; font-size:1rem;}
+
+.sec-head h2{font-size:clamp(1.9rem,4.8vw,3.1rem); max-width:700px;}
+.cards{display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem; margin-top:3.6rem; max-width:1200px; margin-left:auto; margin-right:auto;}
+@media(max-width:900px){.cards{grid-template-columns:1fr;}}
+.card{background:var(--char); border:1px solid rgba(244,241,236,.08); padding:2.2rem 1.9rem; min-height:300px; display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden; transition:transform .5s cubic-bezier(.2,.8,.2,1), border-color .4s;}
+.card:hover{transform:translateY(-8px); border-color:rgba(255,59,59,.4);}
+.card .idx{position:absolute; top:1.6rem; right:1.8rem; font-family:var(--serif); font-size:.85rem; color:var(--red);}
+.card .vis{height:150px; border-radius:2px; margin-bottom:1.4rem; background:linear-gradient(140deg,#1c1c1c,#262626); border:1px solid rgba(255,59,59,.15); position:relative; overflow:hidden;}
+.card .vis::after{content:'';position:absolute; inset:0; background:radial-gradient(circle at 30% 30%, rgba(255,59,59,.12), transparent 60%); pointer-events:none;}
+.card h3{font-size:1.35rem;}
+.card p{color:var(--grey); font-size:.87rem; margin-top:.6rem; font-weight:300; line-height:1.65;}
+
+.portfolio{max-width:1300px; margin:0 auto;}
+.pf-filter{display:flex; gap:1.6rem; margin-top:1.4rem; flex-wrap:wrap; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--grey);}
+.pf-grid{display:grid; grid-template-columns:1fr 1fr; gap:1.3rem; margin-top:2.6rem;}
+@media(max-width:800px){.pf-grid{grid-template-columns:1fr;}}
+.pf-item{position:relative; aspect-ratio:4/3; overflow:hidden; background:linear-gradient(145deg,#1a1a1a,#231414); border:1px solid rgba(244,241,236,.06); transition:transform .5s ease;}
+.pf-item:hover{transform:translateY(-4px);}
+.pf-canvas{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1;}
+.pf-item .tag{z-index:2;}
+/* UGC Advertising: vertical phone/video-frame motif */
+.pf-ugc::before{content:'';position:absolute; top:12%; left:38%; width:24%; height:76%; border:1.5px solid rgba(255,59,59,.5); border-radius:10px; background:linear-gradient(180deg,rgba(255,59,59,.08),transparent 60%);}
+.pf-ugc::after{content:'▶';position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); color:var(--red); font-size:1rem; opacity:.85;}
+/* AI Video: neural node/particle motif */
+.pf-ai{background-image:radial-gradient(circle at 20% 30%, rgba(255,59,59,.35) 0 2px, transparent 3px),
+  radial-gradient(circle at 55% 60%, rgba(244,241,236,.3) 0 2px, transparent 3px),
+  radial-gradient(circle at 75% 25%, rgba(255,59,59,.3) 0 2px, transparent 3px),
+  radial-gradient(circle at 40% 80%, rgba(244,241,236,.25) 0 2px, transparent 3px),
+  radial-gradient(circle at 85% 70%, rgba(255,59,59,.25) 0 2px, transparent 3px),
+  linear-gradient(145deg,#1a1a1a,#231414);
+  background-size:100% 100%;}
+.pf-ai::before{content:'';position:absolute; inset:0; background:
+  linear-gradient(115deg,transparent 48%,rgba(255,59,59,.15) 49%,transparent 51%),
+  linear-gradient(70deg,transparent 60%,rgba(244,241,236,.1) 61%,transparent 63%);}
+/* Brand Campaigns: bold type/grid collage motif */
+.pf-brand{background:repeating-linear-gradient(90deg,rgba(244,241,236,.05) 0 1px, transparent 1px 25%),
+  repeating-linear-gradient(0deg,rgba(244,241,236,.05) 0 1px, transparent 1px 25%),
+  linear-gradient(145deg,#1a1a1a,#231414);}
+.pf-brand::before{content:'AA';position:absolute; top:10%; left:8%; font-family:var(--serif); font-size:3.4rem; color:rgba(255,59,59,.18); line-height:1;}
+/* Website Experiences: browser-frame motif */
+.pf-web::before{content:'';position:absolute; top:14%; left:10%; right:10%; bottom:14%; border:1px solid rgba(244,241,236,.25); border-radius:4px;}
+.pf-web::after{content:'● ● ●';position:absolute; top:16.5%; left:13%; letter-spacing:4px; font-size:.5rem; color:rgba(255,59,59,.6);}
+.pf-item .tag{position:absolute; bottom:0; left:0; right:0; padding:1.3rem; background:linear-gradient(to top,rgba(0,0,0,.8),transparent);}
+.pf-item .tag small{color:var(--red); font-size:.65rem; letter-spacing:.14em;}
+.pf-item .tag h4{font-size:1.2rem; margin-top:.3rem;}
+.pf-item .tag p{font-size:.78rem; color:var(--grey); margin-top:.3rem; font-weight:300;}
+.concept-note{margin-top:1.8rem; font-size:.78rem; color:var(--grey); font-style:italic;}
+
+.process{max-width:1000px; margin:0 auto;}
+.proc-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:1.4rem; margin-top:3.4rem;}
+@media(max-width:800px){.proc-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.proc-grid{grid-template-columns:1fr;}}
+.proc-item .num{font-family:var(--serif); color:var(--red); font-size:1.6rem;}
+.proc-item h3{font-size:1.1rem; margin-top:.6rem;}
+.proc-item p{color:var(--grey); font-size:.82rem; margin-top:.5rem; font-weight:300; line-height:1.6;}
+
+.why{max-width:1000px; margin:0 auto;}
+.principles{display:flex; flex-direction:column; margin-top:3.2rem;}
+.principle{display:flex; gap:2rem; padding:1.7rem 0; border-top:1px solid rgba(244,241,236,.08); align-items:baseline;}
+.principle:last-child{border-bottom:1px solid rgba(244,241,236,.08);}
+.principle .num{font-family:var(--serif); color:var(--red); font-size:.95rem; min-width:2.2rem;}
+.principle h3{font-size:1.35rem; min-width:240px;}
+.principle p{color:var(--grey); font-weight:300; font-size:.9rem; line-height:1.7;}
+@media(max-width:700px){.principle{flex-direction:column; gap:.5rem;}}
+
+.contact{text-align:center;}
+.contact h2{font-size:clamp(2rem,5.6vw,3.6rem); max-width:800px; margin:0 auto; line-height:1.1;}
+.ctas2{display:flex; gap:1rem; justify-content:center; margin-top:2.2rem; flex-wrap:wrap;}
+.contact-details{margin-top:1.6rem; font-size:.82rem; color:var(--grey); letter-spacing:.02em;}
+form{max-width:540px; margin:4rem auto 0; text-align:left; display:flex; flex-direction:column; gap:1.2rem;}
+.field label{display:block; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--grey); margin-bottom:.5rem;}
+.field input,.field select,.field textarea{width:100%; background:transparent; border:none; border-bottom:1px solid rgba(244,241,236,.22); color:var(--white); font-family:var(--sans); font-size:.95rem; padding:.55rem 0;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--red);}
+.field select option{background:var(--char);}
+.field textarea{resize:vertical; min-height:80px;}
+form .btn{align-self:flex-start; margin-top:.6rem; border:none;}
+.form-msg{font-size:.84rem; color:var(--red); margin-top:1rem; display:none;}
+.err{display:block; font-size:.74rem; color:var(--red); margin-top:.35rem; min-height:1em;}
+.field input.invalid,.field textarea.invalid{border-color:var(--red);}
+.final-reveal{margin-top:5rem; font-family:var(--serif); font-size:clamp(1.8rem,5vw,3rem);}
+.final-reveal .sm{display:block; font-family:var(--sans); font-size:.75rem; letter-spacing:.3em; color:var(--red); margin-top:.9rem;}
+
+footer{padding:3.4rem 6vw 2.6rem; text-align:center; position:relative; z-index:2;}
+.foot-links{display:flex; flex-wrap:wrap; justify-content:center; gap:2rem; font-size:.78rem; color:var(--grey);}
+.foot-links a:hover{color:var(--red);}
+.totop{margin-top:2.2rem; font-size:.7rem; letter-spacing:.1em; color:var(--grey); cursor:pointer; display:inline-block;}
+.totop:hover{color:var(--red);}
+.no-webgl #webgl{display:none;}
+.no-webgl .panel{background:var(--black);}
+
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important; transition-duration:.001ms !important;}}
+</style>
+</head>
+<body>
+
+<canvas id="webgl"></canvas>
+<div class="noise"></div>
+<div id="cur"></div>
+<div id="ring"><span class="lbl">VIEW</span></div>
+
+<nav>
+  <div class="logo">MUV STUDIO</div>
+  <div class="navlinks" id="navlinks">
+    <a href="#top">Home</a><a href="#about">About</a><a href="#services">Services</a><a href="#work">Our Work</a><a href="#contact">Contact</a>
+  </div>
+  <button class="navtoggle" id="navtoggle" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu">☰</button>
+</nav>
+
+<section class="hero" id="top">
+  <div class="eyebrow" id="eyebrow">MUV STUDIO</div>
+  <h1 class="headline">
+    <span class="line"><span>We Turn Ideas</span></span>
+    <span class="line"><span>Into Experiences.</span></span>
+  </h1>
+  <p class="sub" id="sub">Creative visuals, cinematic storytelling and digital experiences designed to make brands unforgettable.</p>
+  <div class="ctas" id="ctas">
+    <a href="#work" class="btn solid">Explore Our Work</a>
+    <a href="#contact" class="btn outline">Let's Create Together</a>
+  </div>
+  <div class="scrollind" id="scrollind">SCROLL<div class="bar"></div></div>
+</section>
+
+<section class="about panel" id="about">
+  <div class="goldline reveal"></div>
+  <h2 class="reveal">Beyond Ordinary Creativity.</h2>
+  <p class="reveal">MUV STUDIO transforms ideas into powerful visual stories. From attention-grabbing video advertisements to immersive digital experiences, we help brands express their identity through creative content and thoughtful design.</p>
+</section>
+
+<section class="panel" id="services">
+  <div class="sec-head reveal"><h2>Three ways we move brands forward.</h2></div>
+  <div class="cards">
+    <div class="card reveal" data-scene="ugc"><span class="idx">01</span><div class="vis"><canvas class="pf-canvas"></canvas></div><h3>UGC Video Ads</h3><p>Authentic, engaging video advertisements designed to capture attention, communicate value and connect brands with their audiences.</p></div>
+    <div class="card reveal" data-scene="ai"><span class="idx">02</span><div class="vis"><canvas class="pf-canvas"></canvas></div><h3>AI Video Production</h3><p>AI-powered cinematic visuals and creative video production that transform concepts into compelling advertising experiences.</p></div>
+    <div class="card reveal" data-scene="web"><span class="idx">03</span><div class="vis"><canvas class="pf-canvas"></canvas></div><h3>Premium Website Design</h3><p>Modern, responsive and visually distinctive websites designed to express your brand and deliver meaningful digital experiences.</p></div>
+  </div>
+</section>
+
+<section class="portfolio panel" id="work">
+  <div class="sec-head reveal"><h2>Where Creativity Comes to Life.</h2>
+  <div class="pf-filter"><span>UGC Advertising</span><span>AI Video</span><span>Brand Campaigns</span><span>Website Experiences</span></div></div>
+  <div class="pf-grid">
+    <div class="pf-item pf-ugc reveal" data-scene="ugc"><canvas class="pf-canvas"></canvas><div class="tag"><small>CONCEPT — UGC ADVERTISING</small><h4>Project Title</h4><p>Placeholder — replace with real project</p></div></div>
+    <div class="pf-item pf-ai reveal" data-scene="ai"><canvas class="pf-canvas"></canvas><div class="tag"><small>CONCEPT — AI VIDEO</small><h4>Project Title</h4><p>Placeholder — replace with real project</p></div></div>
+    <div class="pf-item pf-brand reveal" data-scene="brand"><canvas class="pf-canvas"></canvas><div class="tag"><small>CONCEPT — BRAND CAMPAIGNS</small><h4>Project Title</h4><p>Placeholder — replace with real project</p></div></div>
+    <div class="pf-item pf-web reveal" data-scene="web"><canvas class="pf-canvas"></canvas><div class="tag"><small>CONCEPT — WEBSITE EXPERIENCES</small><h4>Project Title</h4><p>Placeholder — replace with real project</p></div></div>
+  </div>
+  <p class="concept-note reveal">All items above are structural placeholders — swap in your own project titles, categories and visuals.</p>
+</section>
+
+<section class="process panel">
+  <div class="sec-head reveal"><h2>From Vision to Reality.</h2></div>
+  <div class="proc-grid">
+    <div class="proc-item reveal"><div class="num">01</div><h3>Discover</h3><p>Understand the brand, its goals, audience and creative direction.</p></div>
+    <div class="proc-item reveal"><div class="num">02</div><h3>Create</h3><p>Develop concepts, scripts, visuals and creative assets.</p></div>
+    <div class="proc-item reveal"><div class="num">03</div><h3>Produce</h3><p>Turn approved concepts into polished advertisements, videos and digital experiences.</p></div>
+    <div class="proc-item reveal"><div class="num">04</div><h3>Deliver</h3><p>Deliver the completed creative work, ready for the client's intended platforms.</p></div>
+  </div>
+</section>
+
+<section class="why panel">
+  <h2 class="reveal">Made to Make an Impact.</h2>
+  <div class="principles">
+    <div class="principle reveal"><span class="num">01</span><h3>Creative Thinking</h3><p>Original ideas shaped around each brand's story.</p></div>
+    <div class="principle reveal"><span class="num">02</span><h3>Cinematic Quality</h3><p>Every frame treated with intention and craft.</p></div>
+    <div class="principle reveal"><span class="num">03</span><h3>Modern Technology</h3><p>AI-assisted production paired with hands-on direction.</p></div>
+    <div class="principle reveal"><span class="num">04</span><h3>Brand-Focused Design</h3><p>Work rooted in what makes each brand distinct.</p></div>
+  </div>
+</section>
+
+<section class="contact panel" id="contact">
+  <h2 class="reveal">Have an Idea? Let's Make It Real.</h2>
+  <p class="sub reveal" style="opacity:1;">Have a project in mind? Let's create something extraordinary together.</p>
+  <div class="ctas2 reveal">
+    <a href="#contact-form" class="btn solid">Start a Project</a>
+    <a href="https://wa.me/917416883775" target="_blank" class="btn outline">WhatsApp</a>
+    <a href="mailto:muzammil954265@gmail.com" class="btn outline">Email</a>
+    <a href="https://instagram.com/themuvstudio" target="_blank" class="btn outline">Instagram</a>
+  </div>
+  <p class="contact-details reveal">+91 74168 83775 &nbsp;·&nbsp; muzammil954265@gmail.com &nbsp;·&nbsp; @themuvstudio</p>
+  <form id="contact-form" class="reveal" novalidate>
+    <div class="field"><label for="f-name">Name</label><input id="f-name" type="text" name="name" minlength="2" required><span class="err" data-for="name"></span></div>
+    <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" name="email" required><span class="err" data-for="email"></span></div>
+    <div class="field"><label for="f-business">Brand / business name</label><input id="f-business" type="text" name="business"></div>
+    <div class="field"><label for="f-service">Service required</label>
+      <select id="f-service" name="service"><option>UGC Video Ads</option><option>AI Video Production</option><option>Premium Website Design</option><option>Not sure yet</option></select>
+    </div>
+    <div class="field"><label for="f-details">Project details</label><textarea id="f-details" name="details" minlength="10" required></textarea><span class="err" data-for="details"></span></div>
+    <button type="submit" class="btn solid">Start a Project</button>
+    <div class="form-msg" id="form-msg"></div>
+  </form>
+  <div class="final-reveal reveal">MUV STUDIO<span class="sm">THINK. CREATE. MOVE.</span></div>
+</section>
+
+<footer class="panel">
+  <div class="foot-links"><a href="#top">Home</a><a href="#about">About</a><a href="#services">Services</a><a href="#work">Our Work</a><a href="#contact">Contact</a><a href="https://instagram.com/themuvstudio" target="_blank">@themuvstudio</a></div>
+  <p class="contact-details" style="margin-top:1.4rem;">+91 74168 83775 &nbsp;·&nbsp; muzammil954265@gmail.com</p>
+  <span class="totop" id="totop">BACK TO TOP ↑</span>
+</footer>
+
+<script>
+// Core page logic — runs immediately, independent of any CDN/network status,
+// so the page is never blank even if the Three.js tag below fails or stalls.
+
+// ---------- cursor ----------
+const cur=document.getElementById('cur'), ring=document.getElementById('ring');
+let mx=0,my=0,rx=0,ry=0;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY; cur.style.left=mx+'px'; cur.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*.15; ry+=(my-ry)*.15; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(loop);})();
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>ring.classList.add('big'));
+  el.addEventListener('mouseleave',()=>ring.classList.remove('big'));
+});
+
+// ---------- scroll reveals ----------
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in'); io.unobserve(en.target);}}),{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+document.getElementById('totop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// ---------- mobile nav ----------
+const navlinks=document.getElementById('navlinks'), navtoggle=document.getElementById('navtoggle');
+function closeNav(){ navlinks.classList.remove('open'); navtoggle.setAttribute('aria-expanded','false'); navtoggle.textContent='☰'; navtoggle.setAttribute('aria-label','Open menu'); }
+navtoggle.addEventListener('click',()=>{
+  const open=navlinks.classList.toggle('open');
+  navtoggle.setAttribute('aria-expanded', open?'true':'false');
+  navtoggle.textContent = open?'✕':'☰';
+  navtoggle.setAttribute('aria-label', open?'Close menu':'Open menu');
+});
+navlinks.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeNav));
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeNav(); });
+
+// ---------- active section nav highlighting ----------
+const navAnchors={}; navlinks.querySelectorAll('a').forEach(a=>{ navAnchors[a.getAttribute('href').slice(1)]=a; });
+const spy=new IntersectionObserver(es=>{
+  es.forEach(en=>{ const a=navAnchors[en.target.id]; if(a && en.isIntersecting){ Object.values(navAnchors).forEach(x=>x.classList.remove('active')); a.classList.add('active'); } });
+},{threshold:.4, rootMargin:'-20% 0px -60% 0px'});
+['top','about','services','work','contact'].forEach(id=>{ const el=document.getElementById(id); if(el) spy.observe(el); });
+
+// ---------- contact form ----------
+const cform=document.getElementById('contact-form');
+function validateField(el){
+  const errEl=cform.querySelector('.err[data-for="'+el.name+'"]');
+  let msg='';
+  if(el.validity.valueMissing) msg='This field is required.';
+  else if(el.name==='email' && el.validity.typeMismatch) msg='Enter a valid email address.';
+  else if(el.validity.tooShort) msg='Please add a bit more detail.';
+  el.classList.toggle('invalid', !!msg);
+  if(errEl) errEl.textContent=msg;
+  return !msg;
+}
+['name','email','details'].forEach(n=>{
+  const el=cform.elements[n];
+  el.addEventListener('blur',()=>validateField(el));
+  el.addEventListener('input',()=>{ if(el.classList.contains('invalid')) validateField(el); });
+});
+cform.addEventListener('submit',e=>{
+  e.preventDefault();
+  const fields=['name','email','details'].map(n=>cform.elements[n]);
+  const valid=fields.map(validateField).every(Boolean);
+  const msg=document.getElementById('form-msg');
+  msg.style.display='block';
+  if(!valid){ msg.textContent='Please fix the highlighted fields before sending.'; return; }
+
+  // --- Backend integration point ---
+  // No email/backend service is connected yet, so nothing is actually sent.
+  // To go live, replace this block with e.g.:
+  //   fetch('https://your-endpoint.example/contact', {
+  //     method:'POST', headers:{'Content-Type':'application/json'},
+  //     body: JSON.stringify(Object.fromEntries(new FormData(cform)))
+  //   }).then(()=>{ msg.textContent='Thanks — your project details have been sent.'; cform.reset(); })
+  //     .catch(()=>{ msg.textContent='Something went wrong — please email us directly.'; });
+  msg.textContent='This form isn\'t connected to an email or backend service yet, so nothing was sent — please use WhatsApp or email above for now.';
+});
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Everything below is a progressive enhancement: if this CDN is unreachable
+// (e.g. fully offline local dev), the page above still works — you just
+// won't see the 3D scenes.
+
+// ---------- Three.js original cinematic scene ----------
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function(){
+  try{
+    const canvas=document.getElementById('webgl');
+    const isNarrow = window.innerWidth<700;
+    const renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isNarrow?1.5:2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding=THREE.sRGBEncoding;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.2;
+
+    const scene=new THREE.Scene();
+    scene.fog=new THREE.FogExp2(0x0a0a0a, 0.045);
+    const camera=new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, .1, 100);
+    camera.position.set(0,0,9);
+
+    // key light (warm white) + rim light (electric red) + soft fill + ambient — cinematic 3-point setup
+    scene.add(new THREE.AmbientLight(0x1a1a1a, 1));
+    const key=new THREE.PointLight(0xF4F1EC, 2.4, 40); key.position.set(5,4,6); scene.add(key);
+    const rim=new THREE.PointLight(0xFF3B3B, 3.2, 40); rim.position.set(-6,-2,-4); scene.add(rim);
+    const fill=new THREE.PointLight(0x6a4040, 1, 40); fill.position.set(-2,3,5); scene.add(fill);
+
+    // sculptural centerpiece: two nested forms
+    const group=new THREE.Group(); scene.add(group);
+    const core=new THREE.Mesh(
+      new THREE.IcosahedronGeometry(2, 1),
+      new THREE.MeshStandardMaterial({color:0x181818, metalness:.9, roughness:.18, flatShading:true, envMapIntensity:1.2})
+    );
+    group.add(core);
+    const wire=new THREE.Mesh(
+      new THREE.IcosahedronGeometry(2.9, 1),
+      new THREE.MeshBasicMaterial({color:0xFF3B3B, wireframe:true, transparent:true, opacity:.22})
+    );
+    group.add(wire);
+    const ring3=new THREE.Mesh(
+      new THREE.TorusGeometry(3.6, .01, 8, 80),
+      new THREE.MeshBasicMaterial({color:0xF4F1EC, transparent:true, opacity:.3})
+    );
+    ring3.rotation.x=Math.PI/2.3; group.add(ring3);
+
+    // particle field
+    const PCOUNT = window.innerWidth<700 ? 260 : 650;
+    const pGeo=new THREE.BufferGeometry();
+    const positions=new Float32Array(PCOUNT*3);
+    for(let i=0;i<PCOUNT;i++){
+      positions[i*3]=(Math.random()-.5)*30;
+      positions[i*3+1]=(Math.random()-.5)*30;
+      positions[i*3+2]=(Math.random()-.5)*30;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    const particles=new THREE.Points(pGeo, new THREE.PointsMaterial({color:0xF4F1EC, size:.025, transparent:true, opacity:.5}));
+    scene.add(particles);
+
+    let targetRotX=0, targetRotY=0;
+    document.addEventListener('mousemove', e=>{
+      targetRotY=(e.clientX/window.innerWidth-.5)*.6;
+      targetRotX=(e.clientY/window.innerHeight-.5)*.4;
+    });
+
+    let scrollProgress=0;
+    function updateScroll(){
+      const max=document.body.scrollHeight-window.innerHeight;
+      scrollProgress = max>0 ? window.scrollY/max : 0;
+    }
+    window.addEventListener('scroll', updateScroll, {passive:true});
+    updateScroll();
+
+    function resize(){
+      camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', resize);
+
+    let ctxLost=false;
+    canvas.addEventListener('webglcontextlost', e=>{ e.preventDefault(); ctxLost=true; document.body.classList.add('no-webgl'); });
+
+    let t=0, camZ=9, camY=0, scaleG=1;
+    function animate(){
+      if(ctxLost) return;
+      requestAnimationFrame(animate);
+      t+=reduceMotion?0:0.004;
+      group.rotation.y += ((targetRotY - group.rotation.y) * .04) + (reduceMotion?0:0.0015);
+      group.rotation.x += (targetRotX - group.rotation.x) * .04;
+      wire.rotation.y -= reduceMotion?0:0.0008;
+      particles.rotation.y = t*0.15;
+
+      // scroll-linked camera dolly + object pullback, eased for a smooth cinematic feel
+      const targetZ=9-scrollProgress*4.5, targetY=scrollProgress*1.5, targetScale=1-scrollProgress*0.25;
+      camZ+=(targetZ-camZ)*.06; camY+=(targetY-camY)*.06; scaleG+=(targetScale-scaleG)*.06;
+      camera.position.z=camZ; camera.position.y=camY; group.scale.setScalar(scaleG);
+      rim.intensity = 3.2 - scrollProgress*1.3;
+      scene.fog.density = 0.045 + scrollProgress*0.03;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+    requestAnimationFrame(()=>canvas.classList.add('ready'));
+    window.addEventListener('beforeunload',()=>{
+      core.geometry.dispose(); core.material.dispose();
+      wire.geometry.dispose(); wire.material.dispose();
+      ring3.geometry.dispose(); ring3.material.dispose();
+      pGeo.dispose(); particles.material.dispose();
+      renderer.dispose();
+    });
+  }catch(err){
+    document.body.classList.add('no-webgl');
+  }
+})();
+
+// ---------- portfolio mini scenes: distinct art direction per category ----------
+(function(){
+  if(typeof THREE==='undefined') return;
+  let gmx=0; document.addEventListener('mousemove', e=>{ gmx=(e.clientX/window.innerWidth-0.5); });
+
+  function tex(w,h,draw){
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const ctx=c.getContext('2d'); draw(ctx,w,h);
+    const t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t;
+  }
+
+  const builders={
+    ugc(group){
+      const body=new THREE.Mesh(new THREE.BoxGeometry(2.1,4.3,0.22), new THREE.MeshStandardMaterial({color:0x121212, metalness:.75, roughness:.3}));
+      group.add(body);
+      const screen=new THREE.Mesh(new THREE.PlaneGeometry(1.88,4.0), new THREE.MeshBasicMaterial({map:tex(512,1080,(ctx,w,h)=>{
+        const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'#201414'); g.addColorStop(1,'#111'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle='rgba(244,241,236,.12)'; for(let i=1;i<8;i++){ctx.beginPath(); ctx.moveTo(0,h*i/8); ctx.lineTo(w,h*i/8); ctx.stroke();}
+        ctx.fillStyle='rgba(255,59,59,.9)'; ctx.beginPath(); ctx.moveTo(w*.42,h*.44); ctx.lineTo(w*.42,h*.56); ctx.lineTo(w*.58,h*.5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='rgba(244,241,236,.6)'; ctx.font='400 22px Archivo,Arial'; ctx.fillText('MUV STUDIO', w*.08, h*.92);
+      })})});
+      screen.position.z=0.12; group.add(screen);
+      group.rotation.set(0.08,-0.32,0.04);
+      return {update(t){ group.position.y=Math.sin(t*0.8)*0.07; }};
+    },
+    ai(group){
+      const N=50, pts=[], pos=new Float32Array(N*3);
+      for(let i=0;i<N;i++){ const v=new THREE.Vector3((Math.random()-.5)*5.2,(Math.random()-.5)*5.2,(Math.random()-.5)*5.2); pts.push(v); pos[i*3]=v.x; pos[i*3+1]=v.y; pos[i*3+2]=v.z; }
+      const pGeo=new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+      group.add(new THREE.Points(pGeo, new THREE.PointsMaterial({color:0xF4F1EC, size:.09})));
+      const lpos=[];
+      for(let i=0;i<N;i++) for(let j=i+1;j<N;j++) if(pts[i].distanceTo(pts[j])<1.7) lpos.push(pts[i].x,pts[i].y,pts[i].z,pts[j].x,pts[j].y,pts[j].z);
+      const lGeo=new THREE.BufferGeometry(); lGeo.setAttribute('position', new THREE.Float32BufferAttribute(lpos,3));
+      group.add(new THREE.LineSegments(lGeo, new THREE.LineBasicMaterial({color:0xFF3B3B, transparent:true, opacity:.4})));
+      return {update(t){ group.rotation.x=Math.sin(t*0.3)*0.18; }};
+    },
+    brand(group){
+      const t0=tex(640,420,(ctx,w,h)=>{
+        ctx.fillStyle='#171111'; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle='#F4F1EC'; ctx.font='700 '+Math.floor(h*.42)+'px Georgia,serif'; ctx.textBaseline='middle'; ctx.fillText('Aa', w*.08, h*.5);
+        ctx.fillStyle='rgba(255,59,59,.9)'; ctx.fillRect(w*.1,h*.78,w*.32,h*.045);
+        ctx.strokeStyle='rgba(244,241,236,.2)'; ctx.strokeRect(w*.62,h*.14,w*.28,h*.5);
+      });
+      const geo=new THREE.PlaneGeometry(4.3,2.8);
+      for(let i=0;i<4;i++){
+        const m=new THREE.Mesh(geo, i===0?new THREE.MeshBasicMaterial({map:t0}):new THREE.MeshBasicMaterial({color:i%2?0xFF3B3B:0xF4F1EC, transparent:true, opacity:.1-i*.02}));
+        m.position.set(i*0.16,-i*0.13,-i*0.38); m.rotation.y=-0.16; group.add(m);
+      }
+      group.rotation.set(0.05,0.2,0);
+      return {update(t){ group.rotation.y=0.2+Math.sin(t*0.4)*0.09; }};
+    },
+    web(group){
+      const frame=new THREE.Mesh(new THREE.PlaneGeometry(4.6,3.0), new THREE.MeshBasicMaterial({map:tex(640,420,(ctx,w,h)=>{
+        ctx.fillStyle='#141414'; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle='#232323'; ctx.fillRect(0,0,w,h*.12);
+        ['#FF3B3B','#F4F1EC','#555'].forEach((c,i)=>{ctx.fillStyle=c; ctx.beginPath(); ctx.arc(w*.04+i*w*.03,h*.06,h*.018,0,7); ctx.fill();});
+        const g=ctx.createLinearGradient(0,h*.12,0,h); g.addColorStop(0,'#1c1414'); g.addColorStop(1,'#111'); ctx.fillStyle=g; ctx.fillRect(0,h*.12,w,h*.88);
+        ctx.strokeStyle='rgba(255,59,59,.5)'; ctx.strokeRect(w*.08,h*.22,w*.38,h*.2);
+        ctx.strokeStyle='rgba(244,241,236,.25)'; ctx.strokeRect(w*.54,h*.22,w*.38,h*.2); ctx.strokeRect(w*.08,h*.5,w*.84,h*.35);
+      })})});
+      group.add(frame);
+      const layer=new THREE.Mesh(new THREE.PlaneGeometry(4.6,3.0), new THREE.MeshBasicMaterial({color:0xFF3B3B, transparent:true, opacity:.08}));
+      layer.position.set(0.35,-0.3,-0.6); layer.rotation.y=-0.25; group.add(layer);
+      group.rotation.set(0.12,-0.25,0);
+      return {update(t){ group.position.y=Math.sin(t*0.6)*0.06; }};
+    }
+  };
+
+  function createMini(canvas,type){
+    const renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+    renderer.outputEncoding=THREE.sRGBEncoding;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15;
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(38,1,.1,40); camera.position.set(0,0,8);
+    scene.add(new THREE.AmbientLight(0x202020,1));
+    const key=new THREE.PointLight(0xF4F1EC,2.2,30); key.position.set(4,4,6); scene.add(key);
+    const rim=new THREE.PointLight(0xFF3B3B,2.6,30); rim.position.set(-5,-2,-3); scene.add(rim);
+    const fillL=new THREE.PointLight(0x6a4040,.9,30); fillL.position.set(-2,2,4); scene.add(fillL);
+    const group=new THREE.Group(); scene.add(group);
+    const ext=builders[type](group);
+    function resize(){
+      const r=canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(r.width,r.height,false);
+      camera.aspect=r.width/Math.max(r.height,1); camera.updateProjectionMatrix();
+    }
+    resize(); window.addEventListener('resize',resize);
+    let raf=null, running=false, t=0;
+    function frame(){
+      if(!running) return;
+      raf=requestAnimationFrame(frame);
+      t+= reduceMotion?0:0.012;
+      group.rotation.y += ((gmx*0.35)-group.rotation.y)*0.04;
+      if(!reduceMotion && ext.update) ext.update(t);
+      renderer.render(scene,camera);
+    }
+    return {
+      start(){ if(!running){ running=true; frame(); if(reduceMotion) renderer.render(scene,camera); } },
+      stop(){ running=false; if(raf) cancelAnimationFrame(raf); }
+    };
+  }
+
+  const minis=new WeakMap();
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      const item=en.target, canvas=item.querySelector('.pf-canvas');
+      if(!canvas) return;
+      if(en.isIntersecting){
+        let m=minis.get(item);
+        if(!m){ try{ m=createMini(canvas,item.dataset.scene); minis.set(item,m); }catch(e){ return; } }
+        m.start();
+      } else {
+        const m=minis.get(item); if(m) m.stop();
+      }
+    });
+  },{threshold:.2});
+  document.querySelectorAll('.pf-item[data-scene], .card[data-scene]').forEach(el=>obs.observe(el));
+})();
+</script>
+</body>
+</html>
